@@ -6,7 +6,7 @@ down get something better than an empty page.
 
 - **Stack:** SvelteKit (Svelte 5, TypeScript), no CSS framework
 - **Hosting:** Node server (`@sveltejs/adapter-node`) behind Caddy at
-  [magic_lord.baconana.com](https://magic_lord.baconana.com)
+  [magic-lord.baconana.com](https://magic-lord.baconana.com)
 - **No database, no API, no tracking** — the caption is computed from the date
 
 ## How the daily caption works
@@ -36,10 +36,10 @@ checks that matter.
 The build output is a Node server (`build/index.js`), not static files.
 
 ```sh
-git clone <this repo> /srv/magic_lord && cd /srv/magic_lord
+git clone <this repo> /srv/magic-lord && cd /srv/magic-lord
 npm ci
 npm run build
-PORT=3000 HOST=127.0.0.1 ORIGIN=https://magic_lord.baconana.com node build
+PORT=3000 HOST=127.0.0.1 ORIGIN=https://magic-lord.baconana.com node build
 ```
 
 Environment variables:
@@ -48,35 +48,49 @@ Environment variables:
 | -------- | -------- | ----------------------------------------------------------- |
 | `PORT`   | `3000`   | Must match the port in `Caddyfile`                          |
 | `HOST`   | `0.0.0.0`| Set to `127.0.0.1` so Node is only reachable through Caddy  |
-| `ORIGIN` | —        | Public origin, e.g. `https://magic_lord.baconana.com`       |
+| `ORIGIN` | —        | Public origin, e.g. `https://magic-lord.baconana.com`       |
 
-Example systemd unit — `/etc/systemd/system/magic-lord.service`:
+### Run with PM2
 
-```ini
-[Unit]
-Description=Magic Lord placeholder site
-After=network.target
-
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=/srv/magic_lord
-Environment=NODE_ENV=production
-Environment=PORT=3000
-Environment=HOST=127.0.0.1
-Environment=ORIGIN=https://magic_lord.baconana.com
-ExecStart=/usr/bin/node build
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-```
+The process settings live in `ecosystem.config.cjs`, so nothing needs root: no
+unit file, no system paths.
 
 ```sh
-sudo systemctl daemon-reload
-sudo systemctl enable --now magic-lord
+npm ci
+npm run build
+pm2 start ecosystem.config.cjs   # first time
+pm2 save                          # remember the process list
 ```
+
+If PM2 is not installed yet: `npm i -g pm2` (or prefix everything with `npx`).
+
+After a deploy — `git pull && npm ci && npm run build` — pick up the new build:
+
+```sh
+pm2 restart magic-lord --update-env
+```
+
+Useful commands:
+
+```sh
+pm2 status
+pm2 logs magic-lord
+pm2 describe magic-lord
+pm2 delete magic-lord   # stop and forget it
+```
+
+To bring the site back after a reboot, run `pm2 startup` once (it prints a
+command to copy-paste; on some hosts that command asks for elevated rights). If
+you would rather avoid that entirely, add this to your own crontab instead
+(`crontab -e`):
+
+```cron
+@reboot pm2 resurrect
+```
+
+Keep `ecosystem.config.cjs` in sync with `Caddyfile`: `PORT` must match the
+`reverse_proxy` target, `HOST=127.0.0.1` keeps Node reachable only through
+Caddy, and `ORIGIN` must be the public HTTPS origin.
 
 Caddy: include the `Caddyfile` from this repo in `/etc/caddy/Caddyfile` (or copy
 the host block), then reload:

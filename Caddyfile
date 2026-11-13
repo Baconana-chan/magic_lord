@@ -1,10 +1,10 @@
-# magic_lord.baconana.com — SvelteKit (adapter-node) behind Caddy.
+# magic-lord.baconana.com — SvelteKit (adapter-node) behind Caddy.
 # Place this host block in /etc/caddy/Caddyfile (or import this file),
 # then: sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
 #
-# The Node server must be running on 127.0.0.1:3000 (see README.md).
+# The Node server must be running on 127.0.0.1:3000 (PM2: `pm2 start ecosystem.config.cjs`).
 
-magic_lord.baconana.com {
+magic-lord.baconana.com {
 	encode zstd gzip
 
 	# SvelteKit assets have content hashes in their names, so they never change.
@@ -29,7 +29,7 @@ magic_lord.baconana.com {
 	# Uncomment if you want request logs on disk (the directory must be writable
 	# by the caddy user):
 	# log {
-	# 	output file /var/log/caddy/magic_lord.log
+	# 	output file /var/log/caddy/magic-lord.log
 	# 	format console
 	# }
 }
